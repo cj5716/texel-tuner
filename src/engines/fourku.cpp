@@ -208,7 +208,7 @@ struct Trace
     int pawn_phalanx[2]{};
     int pawn_passed_protected[2]{};
     int pawn_passed_blocked[4][2]{};
-    int pawn_passed_king_distance[2][2]{};
+    int pawn_passed_king_distance[2][4][2]{};
     int bishop_pair[2]{};
     int king_shield[2][2]{};
 };
@@ -242,7 +242,7 @@ const int pawn_passed_protected = S(15, 17);
 const int pawn_doubled = S(-15, -27);
 const int pawn_phalanx = S(10, 17);
 const int pawn_passed_blocked[] = { S(-7, -16), S(6, -35), S(-2, -68), S(26, -106) };
-const int pawn_passed_king_distance[] = { S(3, -6), S(-3, 9) };
+const int pawn_passed_king_distance[][4] = {{0,0,0,0},{0,0,0,0}};
 const int bishop_pair = S(23, 69);
 const int king_shield[] = { S(32, -8), S(24, -7) };
 const int pawn_attacked[] = { S(-64, -14), S(-155, -142) };
@@ -329,8 +329,8 @@ static Trace eval(Position& pos) {
                         // King defense/attack
                         // king distance to square in front of passer
                         for (int i = 0; i < 2; ++i) {
-                            score += pawn_passed_king_distance[i] * (rank - 1) * max(abs((kings[i] / 8) - (rank + 1)), abs((kings[i] % 8) - file));
-                            TraceAdd(pawn_passed_king_distance[i], (rank - 1) * max(abs((kings[i] / 8) - (rank + 1)), abs((kings[i] % 8) - file)));
+                            score += pawn_passed_king_distance[i][rank-3] * max(abs((kings[i] / 8) - (rank + 1)), abs((kings[i] % 8) - file));
+                            TraceAdd(pawn_passed_king_distance[i][rank-3], max(abs((kings[i] / 8) - (rank + 1)), abs((kings[i] % 8) - file)));
                         }
                     }
                 }
@@ -511,7 +511,7 @@ parameters_t FourkuEval::get_initial_parameters()
     get_initial_parameter_single(parameters, pawn_doubled);
     get_initial_parameter_single(parameters, pawn_phalanx);
     get_initial_parameter_array(parameters, pawn_passed_blocked, 4);
-    get_initial_parameter_array(parameters, pawn_passed_king_distance, 2);
+    get_initial_parameter_array_2d(parameters, pawn_passed_king_distance, 2, 4);
     get_initial_parameter_single(parameters, bishop_pair);
     get_initial_parameter_array(parameters, king_shield, 2);
     return parameters;
@@ -530,7 +530,7 @@ static coefficients_t get_coefficients(const Trace& trace)
     get_coefficient_single(coefficients, trace.pawn_doubled);
     get_coefficient_single(coefficients, trace.pawn_phalanx);
     get_coefficient_array(coefficients, trace.pawn_passed_blocked, 4);
-    get_coefficient_array(coefficients, trace.pawn_passed_king_distance, 2);
+    get_coefficient_array_2d(coefficients, trace.pawn_passed_king_distance, 2, 4);
     get_coefficient_single(coefficients, trace.bishop_pair);
     get_coefficient_array(coefficients, trace.king_shield, 2);
     return coefficients;
@@ -555,7 +555,7 @@ void FourkuEval::print_parameters(const parameters_t& parameters)
     print_single(ss, parameters_copy, index, "pawn_doubled");
     print_single(ss, parameters_copy, index, "pawn_phalanx");
     print_array(ss, parameters_copy, index, "pawn_passed_blocked", 4);
-    print_array(ss, parameters_copy, index, "pawn_passed_king_distance", 2);
+    print_array_2d(ss, parameters_copy, index, "pawn_passed_king_distance", 2, 4);
     print_single(ss, parameters_copy, index, "bishop_pair");
     print_array(ss, parameters_copy, index, "king_shield", 2);
     cout << ss.str() << "\n";
